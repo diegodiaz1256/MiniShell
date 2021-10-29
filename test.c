@@ -8,12 +8,17 @@
 #define _GNU_SOURCE
 #include "parser.h"
 void cd(tcommand *command);
+void executeexternal(tcommand * command,int morecoming);
 int main(void)
 {
 	char buf[1024];
 	tline *line;
 	int i, j;
 	pid_t pid;
+	int tuberia[2];
+	if(pipe(tuberia)){
+		printf("error de tuberias");
+	}
 	
 	printf("msh %s> ",getcwd(buf, 1024));
 	while (fgets(buf, 1024, stdin)){
@@ -44,16 +49,32 @@ int main(void)
 			char * aaa = (line->commands[i].argv)[0];
 			if(pid==0){
 				if(line->commands[i].filename!=NULL){
-					execvp(line->commands[i].filename, line->commands->argv);
+					if(i==0){
+						
+						dup2(tuberia[1],1);
+						close(tuberia[0]);
+						close(tuberia[1]);	
+						execvp(line->commands[i].filename, (&(line->commands)[i])->argv);
+						exit(1);
+					}else{
+						dup2(tuberia[0],0);
+						close(tuberia[0]);
+						close(tuberia[1]);
+						execvp(line->commands[i].filename, (&(line->commands)[i])->argv);
+						exit(1);
+					}
+					
+					//execlp(line->commands[i].filename,NULL);
 				}
 				
-				exit(0);
+				
 				
 			}else{
 				if(strcmp((line->commands[i].argv)[0],"cd")==0){
 					cd(&(line->commands)[i]);
 				}
-				waitpid(pid,NULL,0);
+				waitpid(pid,NULL,1);
+				
 			}
 		}
 		/* if (line->ncommands > 0){
@@ -76,9 +97,15 @@ int main(void)
 }
 
 void cd(tcommand *command){
+	int result=0;
 	if(command->argc==1){
-		printf("\n\n--  %d  --\n\n",chdir(getenv("HOME")));
+		result=chdir(getenv("HOME"));
+	}if(command->argc>2){
+		printf("Demasiados argumentos, puede que te refieras a: `cd %s`\n",command->argv[1]);
 	}else{
-		printf("\n\n--  %d  --\n\n",chdir(command->argv[1]));
+		result=chdir(command->argv[1]);
+	}
+	if(result){
+		printf("Error al moverse al directorio %s\n",command->argv[1]);
 	}
 }
