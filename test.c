@@ -8,7 +8,8 @@
 #define _GNU_SOURCE
 #include "parser.h"
 void cd(tcommand *command);
-void executeexternal(tcommand * command,int morecoming);
+void singleComand(tcommand * command);
+void multipleCommands(tline * line);
 int main(void)
 {
 	char buf[1024];
@@ -39,14 +40,69 @@ int main(void)
 		if (line->background){
 			printf("comando a ejecutarse en background\n");
 		}
-		for (i = 0; i < line->ncommands; i++){
+		if(line->ncommands==1){
+			singleComand(line->commands);
+		}
+		else if(line->ncommands>1){
+			multipleCommands(line);
+			
+		}
+		// waitpid(pid,NULL,1);
+		//wait(NULL);
+		printf("msh %s> ",getcwd(buf, 1024)); fflush(stdout);
+	}
+	return 0;
+}
+
+void cd(tcommand *command){
+	int result=0;
+	if(command->argc==1){
+		result=chdir(getenv("HOME"));
+	}if(command->argc>2){
+		printf("Demasiados argumentos, puede que te refieras a: `cd %s`\n",command->argv[1]);
+	}else{
+		result=chdir(command->argv[1]);
+	}
+	if(result){
+		printf("Error al moverse al directorio %s\n",command->argv[1]);
+	}
+}
+
+void singleComand(tcommand * command){
+	pid_t pid = fork();
+	int status;
+	if(pid==0){
+		if(command->filename!=NULL){
+			execvp(command->filename, command->argv);
+		}
+		exit(1);
+	}
+	else{
+		if(strcmp((command->argv)[0],"cd")==0){
+			cd(command);
+		}
+		//waitpid(pid,&status,1);
+		wait(NULL);
+		
+	}
+	
+}
+
+void multipleCommands(tline * line){
+	pid_t pid;
+	int tuberia[2];
+	int status;
+	if(pipe(tuberia)){
+		printf("error de tuberias");
+	}
+	for (int i = 0; i < line->ncommands; i++){
 			printf("orden %d (%s):\n", i, line->commands[i].filename);
-			for (j = 0; j < line->commands[i].argc; j++)
+			for (int j = 0; j < line->commands[i].argc; j++)
 			{
 				printf("  argumento %d: %s\n", j, line->commands[i].argv[j]);
 			}
 			pid = fork();
-			char * aaa = (line->commands[i].argv)[0];
+			// char * aaa = (line->commands[i].argv)[0];
 			if(pid==0){
 				if(line->commands[i].filename!=NULL){
 					if(i==0){
@@ -66,46 +122,18 @@ int main(void)
 					
 					//execlp(line->commands[i].filename,NULL);
 				}
-				
-				
-				
-			}else{
-				if(strcmp((line->commands[i].argv)[0],"cd")==0){
-					cd(&(line->commands)[i]);
-				}
-				waitpid(pid,NULL,1);
-				
+				else{
+					exit(1);
+				}		
 			}
-		}
-		/* if (line->ncommands > 0){
-			pid = fork();
-			{if(pid==0){
-				if(line->commands[0].filename!=NULL){
-					char ** primero = line->commands->argv;
-					execvp(line->commands[0].filename, line->commands->argv);
-					sleep(2);
-					exit(0);
-				}
-			}else{
-				waitpid(pid,NULL,0);
-			}}
-		} */
-		
-		printf("msh %s> ",getcwd(buf, 1024));
-	}
-	return 0;
-}
+			else{
+				wait(&status);
+			}
 
-void cd(tcommand *command){
-	int result=0;
-	if(command->argc==1){
-		result=chdir(getenv("HOME"));
-	}if(command->argc>2){
-		printf("Demasiados argumentos, puede que te refieras a: `cd %s`\n",command->argv[1]);
-	}else{
-		result=chdir(command->argv[1]);
 	}
-	if(result){
-		printf("Error al moverse al directorio %s\n",command->argv[1]);
+	for(int k=0;k<line->ncommands;k++){
+		wait(&status);
 	}
+	// wait(&status);
+	
 }
