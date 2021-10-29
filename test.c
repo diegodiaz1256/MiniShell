@@ -1,18 +1,21 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #define _GNU_SOURCE
 #include "parser.h"
-
+void cd(tcommand *command);
 int main(void)
 {
 	char buf[1024];
 	tline *line;
 	int i, j;
 	pid_t pid;
-
-	printf("msh> ");
+	
+	printf("msh %s> ",getcwd(buf, 1024));
 	while (fgets(buf, 1024, stdin)){
 
 		line = tokenize(buf);
@@ -37,18 +40,45 @@ int main(void)
 			{
 				printf("  argumento %d: %s\n", j, line->commands[i].argv[j]);
 			}
-		}
-		if (line->ncommands > 0){
 			pid = fork();
+			char * aaa = (line->commands[i].argv)[0];
 			if(pid==0){
-				execvp(line->commands[0].filename, line->commands->argv);
+				if(line->commands[i].filename!=NULL){
+					execvp(line->commands[i].filename, line->commands->argv);
+				}
+				
 				exit(0);
+				
 			}else{
+				if(strcmp((line->commands[i].argv)[0],"cd")==0){
+					cd(&(line->commands)[i]);
+				}
 				waitpid(pid,NULL,0);
 			}
 		}
+		/* if (line->ncommands > 0){
+			pid = fork();
+			{if(pid==0){
+				if(line->commands[0].filename!=NULL){
+					char ** primero = line->commands->argv;
+					execvp(line->commands[0].filename, line->commands->argv);
+					sleep(2);
+					exit(0);
+				}
+			}else{
+				waitpid(pid,NULL,0);
+			}}
+		} */
 		
-		printf("msh> ");
+		printf("msh %s> ",getcwd(buf, 1024));
 	}
 	return 0;
+}
+
+void cd(tcommand *command){
+	if(command->argc==1){
+		printf("\n\n--  %d  --\n\n",chdir(getenv("HOME")));
+	}else{
+		printf("\n\n--  %d  --\n\n",chdir(command->argv[1]));
+	}
 }

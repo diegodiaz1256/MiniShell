@@ -11,7 +11,7 @@
                 "-no-pie",
                 "libparser_64.a",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/executables/${fileBasenameNoExtension}"
             ],
             "options": {
                 "cwd": "${fileDirname}"
