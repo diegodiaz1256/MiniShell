@@ -12,7 +12,7 @@
 # define ERROR 2
 #include "parser.h"
 void cd(tcommand *command);
-void singleComand(tcommand * command);
+void singleComand(tline * line);
 void multipleCommands(tline * line);
 int main(void)
 {
@@ -45,7 +45,7 @@ int main(void)
 			printf("comando a ejecutarse en background\n");
 		}
 		if(line->ncommands==1){
-			singleComand(line->commands);
+			singleComand(line);
 		}
 		else if(line->ncommands>1){
 			multipleCommands(line);
@@ -73,18 +73,45 @@ void cd(tcommand *command){
 	}
 }
 
-void singleComand(tcommand * command){
+void singleComand(tline * line){
 	pid_t pid = fork();
 	int status;
 	if(pid==0){
-		if(command->filename!=NULL){
-			execvp(command->filename, command->argv);
+		if(line->redirect_input!=NULL){
+			int file = open(line->redirect_input,O_RDONLY);
+			if(file==-1){
+				fprintf(stderr,"%s: Este fichero no existe o no se puede abrir.\n",line->redirect_input);
+				exit(1);
+			}else{
+				dup2(file, READ);
+			}
+		}
+		if(line->redirect_output!=NULL){
+			int file = open(line->redirect_output, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+			if(file==-1){
+				fprintf(stderr,"%s: Fallo creando el fichero o no se puede abrir.\n",line->redirect_output);
+				exit(1);
+			}else{
+				dup2(file, WRITE);
+			}
+		}
+		if(line->redirect_error!=NULL){
+			int file = open(line->redirect_error,O_WRONLY | O_CREAT | O_TRUNC);
+			if(file==-1){
+				fprintf(stderr,"%s: Fallo creando el fichero o no se puede abrir.\n",line->redirect_error);
+				exit(1);
+			}else{
+				dup2(file, ERROR);
+			}
+		}	
+		if(line->commands->filename!=NULL){
+			execvp(line->commands->filename, line->commands->argv);
 		}
 		exit(1);
 	}
 	else{
-		if(strcmp((command->argv)[0],"cd")==0){
-			cd(command);
+		if(strcmp((line->commands->argv)[0],"cd")==0){
+			cd(line->commands);
 		}
 		//waitpid(pid,&status,1);
 		wait(NULL);
