@@ -32,7 +32,7 @@ int main(void)
 		if (line == NULL){
 			continue;
 		}
-		if (line->redirect_input != NULL){
+		/* if (line->redirect_input != NULL){
 			printf("redirección de entrada: %s\n", line->redirect_input);
 		}
 		if (line->redirect_output != NULL){
@@ -40,7 +40,7 @@ int main(void)
 		}
 		if (line->redirect_error != NULL){
 			printf("redirección de error: %s\n", line->redirect_error);
-		}
+		} */
 		if (line->background){
 			printf("comando a ejecutarse en background\n");
 		}
