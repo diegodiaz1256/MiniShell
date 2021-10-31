@@ -5,7 +5,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #define _GNU_SOURCE
+#define READ 0
+#define WRITE 1
+# define ERROR 2
 #include "parser.h"
 void cd(tcommand *command);
 void singleComand(tcommand * command);
@@ -45,8 +49,9 @@ int main(void)
 		}
 		else if(line->ncommands>1){
 			multipleCommands(line);
-			
 		}
+		fflush(stdout);
+		usleep(2);
 		// waitpid(pid,NULL,1);
 		//wait(NULL);
 		printf("msh %s> ",getcwd(buf, 1024)); fflush(stdout);
@@ -84,6 +89,7 @@ void singleComand(tcommand * command){
 		//waitpid(pid,&status,1);
 		wait(NULL);
 		
+		
 	}
 	
 }
@@ -91,33 +97,63 @@ void singleComand(tcommand * command){
 void multipleCommands(tline * line){
 	pid_t pid;
 	int tuberia[2];
+	
 	int status;
+	int wpid;
 	if(pipe(tuberia)){
 		printf("error de tuberias");
 	}
 	for (int i = 0; i < line->ncommands; i++){
-			printf("orden %d (%s):\n", i, line->commands[i].filename);
+			/* printf("orden %d (%s):\n", i, line->commands[i].filename);
 			for (int j = 0; j < line->commands[i].argc; j++)
 			{
 				printf("  argumento %d: %s\n", j, line->commands[i].argv[j]);
-			}
+			} */
 			pid = fork();
 			// char * aaa = (line->commands[i].argv)[0];
+			//if(pid!=0) waitpid(0, &status, 1);
 			if(pid==0){
 				if(line->commands[i].filename!=NULL){
 					if(i==0){
 						
-						dup2(tuberia[1],1);
-						close(tuberia[0]);
-						close(tuberia[1]);	
-						execvp(line->commands[i].filename, (&(line->commands)[i])->argv);
-						exit(1);
+						dup2(tuberia[WRITE],WRITE);
+						close(tuberia[READ]);
+						close(tuberia[WRITE]);
+						if(line->redirect_input!=NULL){
+							int file = open(line->redirect_input,O_RDONLY);
+							if(file==-1){
+								fprintf(stderr,"%s: Este fichero no existe o no se puede abrir.\n",line->redirect_input);
+								exit(1);
+							}else{
+								dup2(file, READ);
+							}
+						}	
+						fflush(stdout);
+						exit(execvp(line->commands[i].filename, (&(line->commands)[i])->argv));
 					}else{
-						dup2(tuberia[0],0);
-						close(tuberia[0]);
-						close(tuberia[1]);
-						execvp(line->commands[i].filename, (&(line->commands)[i])->argv);
-						exit(1);
+						dup2(tuberia[READ],READ);
+						close(tuberia[READ]);
+						close(tuberia[WRITE]);
+						fflush(stdout);
+						if(line->redirect_output!=NULL){
+							int file = open(line->redirect_output,O_WRONLY | O_CREAT | O_TRUNC);
+							if(file==-1){
+								fprintf(stderr,"%s: Fallo creando el fichero o no se puede abrir.\n",line->redirect_output);
+								exit(1);
+							}else{
+								dup2(file, WRITE);
+							}
+						}
+						if(line->redirect_error!=NULL){
+							int file = open(line->redirect_error,O_WRONLY | O_CREAT | O_TRUNC);
+							if(file==-1){
+								fprintf(stderr,"%s: Fallo creando el fichero o no se puede abrir.\n",line->redirect_error);
+								exit(1);
+							}else{
+								dup2(file, ERROR);
+							}
+						}
+						exit(execvp(line->commands[i].filename, (&(line->commands)[i])->argv));
 					}
 					
 					//execlp(line->commands[i].filename,NULL);
@@ -127,13 +163,24 @@ void multipleCommands(tline * line){
 				}		
 			}
 			else{
-				wait(&status);
+				//wait(&status);
+				if(i==line->ncommands-1){
+					waitpid(pid, NULL, 1);
+					//usleep(2);
+					//while(wait(NULL) > 0);
+					//read(fin[0],NULL,sizeof(int));
+				}
+				
 			}
 
 	}
-	for(int k=0;k<line->ncommands;k++){
+	//while(wait(NULL) > 0);
+	
+	/* for(int k=0;k<line->ncommands;k++){
 		wait(&status);
-	}
+	} */
 	// wait(&status);
 	
+	
 }
+
