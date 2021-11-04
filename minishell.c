@@ -9,13 +9,18 @@
 #define _GNU_SOURCE
 #define READ 0
 #define WRITE 1
-# define ERROR 2
+#define ERROR 2
+#include "SimpleLinkedList/simplelinkedlist.h"
 #include "parser.h"
+TLinkedList background;
 void cd(tcommand *command);
 void singleComand(tline * line);
 void multipleCommands(tline * line);
 int main(void)
 {
+	signal(SIGQUIT,SIG_IGN);
+	signal(SIGINT,SIG_IGN);
+	crearVacia(&background);
 	char buf[1024];
 	tline *line;
 	int i, j;
@@ -24,7 +29,6 @@ int main(void)
 	if(pipe(tuberia)){
 		printf("error de tuberias");
 	}
-	
 	printf("msh %s> ",getcwd(buf, 1024));
 	while (fgets(buf, 1024, stdin)){
 
@@ -41,6 +45,7 @@ int main(void)
 		if (line->redirect_error != NULL){
 			printf("redirección de error: %s\n", line->redirect_error);
 		} */
+		
 		if (line->background){
 			printf("comando a ejecutarse en background\n");
 		}
@@ -49,9 +54,11 @@ int main(void)
 		}
 		else if(line->ncommands>1){
 			multipleCommands(line);
+			fflush(stdout);
+			usleep(2);
 		}
-		fflush(stdout);
-		usleep(2);
+			
+		
 		// waitpid(pid,NULL,1);
 		//wait(NULL);
 		printf("msh %s> ",getcwd(buf, 1024)); fflush(stdout);
@@ -77,6 +84,7 @@ void singleComand(tline * line){
 	pid_t pid = fork();
 	int status;
 	if(pid==0){
+		
 		if(line->redirect_input!=NULL){
 			int file = open(line->redirect_input,O_RDONLY);
 			if(file==-1){
@@ -112,16 +120,24 @@ void singleComand(tline * line){
 	else{
 		if(strcmp((line->commands->argv)[0],"cd")==0){
 			cd(line->commands);
+		}else if(strcmp((line->commands->argv)[0],"exit")==0){
+			exit(0);
 		}
-		//waitpid(pid,&status,1);
-		wait(NULL);
-		
+		if(!line->background){
+			wait(NULL);
+		}else{
+			TElemento comand;
+			crear((line->commands->argv)[0], pid, &comand);
+			insertar(comand,&background);
+		}
 		
 	}
 	
 }
 
 void multipleCommands(tline * line){
+	// signal(SIGQUIT,SIG_DFL);
+	// signal(SIGINT,SIG_DFL);
 	pid_t pid;
 	int tuberia[2];
 	
@@ -192,7 +208,10 @@ void multipleCommands(tline * line){
 			else{
 				//wait(&status);
 				if(i==line->ncommands-1){
+					// signal(SIGQUIT,SIG_IGN);
+					// signal(SIGINT,SIG_IGN);
 					waitpid(pid, NULL, 1);
+
 					//usleep(2);
 					//while(wait(NULL) > 0);
 					//read(fin[0],NULL,sizeof(int));
