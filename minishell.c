@@ -238,9 +238,6 @@ void multipleCommands(tline * line, bool isbg){
 			close(tuberia[j][WRITE]);
 			close(tuberia[j][READ]);
 		}
-		if(isbg){
-			//TODO: salida redireccionada
-		}
 		dup2(tuberia[line->ncommands-2][READ], READ);
 		exit(execvp(line->commands[line->ncommands-1].filename, (&(line->commands)[line->ncommands-1])->argv));
 	}
@@ -250,6 +247,10 @@ void multipleCommands(tline * line, bool isbg){
 	}
 	for(int i=0; i<line->ncommands;i++){
 		wait(NULL);
+		if(isbg){
+			//TODO: cambiar proceso a terminado y/o Eliminarlo
+			
+		}
 	}
 }
 
