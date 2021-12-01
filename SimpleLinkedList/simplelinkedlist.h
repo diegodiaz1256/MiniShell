@@ -13,12 +13,11 @@ typedef struct Nodo Tnodo;
 
 typedef Tnodo* TLinkedList;
 
-
 void crearVacia (TLinkedList* a);
 void mostrar (TLinkedList a);
 void insertar (TElemento e, TLinkedList* a);
 void insertarFinal (TElemento e, TLinkedList* a);
-int eliminar (TElemento e, TLinkedList* a);
+TElemento eliminar (int id, TLinkedList* a);
 void primero (TLinkedList a, TElemento* e);
 void resto (TLinkedList* a);
 void ultimo (TLinkedList a, TElemento* e);

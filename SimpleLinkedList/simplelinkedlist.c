@@ -13,15 +13,6 @@ void insertar  (TElemento e, TLinkedList* l){
        asignar(&(aux->info),e);
        *l=aux;
 }
-void mostrar (TLinkedList l){
-    TLinkedList aux = l;
-    while (aux!=NULL){
-        print(aux->info);
-        printf(" ");
-        aux=aux->sig;
-    }
-    printf("\n");
-}
 void crearVacia (TLinkedList* l){
     *l=NULL;
 }    
@@ -44,12 +35,14 @@ void insertarFinal (TElemento e, TLinkedList* a){
     }
 
 }
-int eliminar (TElemento e, TLinkedList* a){
+int eliminar (int id, TLinkedList* a){
         TLinkedList act = *a;
         TLinkedList ant= NULL;
-        int encontrado =0;
-        while ((act!=NULL)&&(!encontrado)){
-            encontrado=igual(&act->info,&e);
+        TElemento encontrado =NULL;
+        while ((act!=NULL)&&(encontrado==NULL)){
+            if(&act->info.job_id==id){
+                encontrado++;
+            }
             if (encontrado){
                 if (ant==NULL){
                     (*a)=(*a)->sig;//por si es el primero

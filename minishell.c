@@ -6,18 +6,22 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include<stdbool.h>  
 #define _GNU_SOURCE
 #define READ 0
 #define WRITE 1
 #define ERROR 2
-//#include "SimpleLinkedList/simplelinkedlist.h"
+#include "SimpleLinkedList/simplelinkedlist.h"
 #include "parser.h"
 //TLinkedList background;
+static TLinkedList Background;
 void cd(tcommand *command);
 void singleComand(tline * line);
-void multipleCommands(tline * line);
+void multipleCommands(tline * line, bool isbg);
+void addbg(tline* linea, char *name);
 int main(void)
 {
+	crearVacia(&Background);
 	signal(SIGQUIT,SIG_IGN);
 	signal(SIGINT,SIG_IGN);
 
@@ -31,7 +35,7 @@ int main(void)
 	if(pipe(tuberia)){
 		printf("error de tuberias");
 	}
-	printf("msh %s> ",getcwd(buf, 1024));
+	printf("\nmsh %s> ",getcwd(buf, 1024));
 	while (fgets(buf, 1024, stdin)){
 
 		line = tokenize(buf);
@@ -47,7 +51,7 @@ int main(void)
 		if (line->redirect_error != NULL){
 			printf("redirección de error: %s\n", line->redirect_error);
 		} */
-		
+		printf("\n");
 		if (line->background){
 			printf("comando a ejecutarse en background\n");
 		}
@@ -55,7 +59,7 @@ int main(void)
 			singleComand(line);
 		}
 		else if(line->ncommands>1){
-			multipleCommands(line);
+			multipleCommands(line, false);
 			fflush(stdout);
 			// usleep(2);
 		}
@@ -63,7 +67,7 @@ int main(void)
 		
 		// waitpid(pid,NULL,1);
 		//wait(NULL);
-		printf("msh %s> ",getcwd(buf, 1024)); fflush(stdout);
+		printf("\nmsh %s> ",getcwd(buf, 1024)); fflush(stdout);
 	}
 	return 0;
 }
@@ -142,9 +146,10 @@ void singleComand(tline * line){
 
 
 
-void multipleCommands(tline * line){
+void multipleCommands(tline * line, bool isbg){
 	// signal(SIGQUIT,SIG_DFL);
 	// signal(SIGINT,SIG_DFL);
+	
 	pid_t pid;
 	int tuberia[(line->ncommands)-1][2];
 	// printf("numero de comandos: %d\n",line->ncommands);
@@ -233,6 +238,9 @@ void multipleCommands(tline * line){
 			close(tuberia[j][WRITE]);
 			close(tuberia[j][READ]);
 		}
+		if(isbg){
+			//TODO: salida redireccionada
+		}
 		dup2(tuberia[line->ncommands-2][READ], READ);
 		exit(execvp(line->commands[line->ncommands-1].filename, (&(line->commands)[line->ncommands-1])->argv));
 	}
@@ -242,6 +250,23 @@ void multipleCommands(tline * line){
 	}
 	for(int i=0; i<line->ncommands;i++){
 		wait(NULL);
+	}
+}
+
+void addbg(tline * linea, char * name){
+	pid_t papa;
+	if((papa= fork())==-1){
+		fprintf(stderr, "Error de ejecucion");
+	}
+	if(papa==0){
+		multipleCommands(linea, true);
+	}else{
+		TElemento proc;
+		proc.job_name=name;
+		proc.pid=papa;
+		proc.status=0;
+		proc.job_id=longitud(Background)+1;
+		insertar(proc, &Background);
 	}
 }
 
