@@ -6,13 +6,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include<stdbool.h>  
+#include <stdbool.h>
+#include "simplelinkedlist.h"
+#include "parser.h"
 #define _GNU_SOURCE
 #define READ 0
 #define WRITE 1
 #define ERROR 2
-#include "simplelinkedlist.h"
-#include "parser.h"
+
 //TLinkedList background;
 static TLinkedList Background;
 void cd(tcommand *command);
