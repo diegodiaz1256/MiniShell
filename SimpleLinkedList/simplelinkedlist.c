@@ -8,9 +8,12 @@
 
 void insertar  (TElemento e, TLinkedList* l){
   //  Tnodo* aux = (Tnodo*) malloc(1*sizeof(Tnodo));
+  printf("Entra en insertar");
   TLinkedList aux = (TLinkedList) malloc(1*sizeof(Tnodo));
+  printf("Memoria asignada");
         aux->sig=*l;
        asignar(&(aux->info),e);
+       printf("asignada");
        *l=aux;
 }
 void crearVacia (TLinkedList* l){
@@ -35,15 +38,16 @@ void insertarFinal (TElemento e, TLinkedList* a){
     }
 
 }
-int eliminar (int id, TLinkedList* a){
+void eliminar (int id, TLinkedList* a , TElemento * salida){
         TLinkedList act = *a;
         TLinkedList ant= NULL;
-        TElemento encontrado =NULL;
-        while ((act!=NULL)&&(encontrado==NULL)){
-            if(&act->info.job_id==id){
-                encontrado++;
+        TElemento encontrado;
+        encontrado.pid=-1;
+        while ((act!=NULL)&&(encontrado.pid==-1)){
+            if((act->info.job_id)==id){
+                asignar(salida, (act)->info);
             }
-            if (encontrado){
+            if (encontrado.pid!=-1){
                 if (ant==NULL){
                     (*a)=(*a)->sig;//por si es el primero
                 }
@@ -56,7 +60,7 @@ int eliminar (int id, TLinkedList* a){
                 act=act->sig;
             }
         }
-        return encontrado;
+        //return encontrado;
 }
 
 void primero (TLinkedList a, TElemento* e){

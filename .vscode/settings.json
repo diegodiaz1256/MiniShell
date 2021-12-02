@@ -3,5 +3,6 @@
         "stdlib.h": "c",
         "string.h": "c",
         "simplelinkedlist.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

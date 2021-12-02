@@ -11,12 +11,12 @@
 #define READ 0
 #define WRITE 1
 #define ERROR 2
-#include "SimpleLinkedList/simplelinkedlist.h"
+#include "simplelinkedlist.h"
 #include "parser.h"
 //TLinkedList background;
 static TLinkedList Background;
 void cd(tcommand *command);
-void singleComand(tline * line);
+void singleComand(tline * line,bool isbg);
 void multipleCommands(tline * line, bool isbg);
 void addbg(tline* linea, char *name);
 int main(void)
@@ -53,10 +53,12 @@ int main(void)
 		} */
 		printf("\n");
 		if (line->background){
-			printf("comando a ejecutarse en background\n");
+			printf("Entra background");
+			//printf("comando a ejecutarse en background\n");
+			addbg(line, buf);
 		}
-		if(line->ncommands==1){
-			singleComand(line);
+		else if(line->ncommands==1){
+			singleComand(line,false);
 		}
 		else if(line->ncommands>1){
 			multipleCommands(line, false);
@@ -86,7 +88,7 @@ void cd(tcommand *command){
 	}
 }
 
-void singleComand(tline * line){
+void singleComand(tline * line, bool isbg){
 	pid_t pid = fork();
 	int status;
 	if(pid==0){
@@ -129,17 +131,14 @@ void singleComand(tline * line){
 		}else if(strcmp((line->commands->argv)[0],"exit")==0){
 			exit(0);
 		}
-		if(!line->background){
-			wait(&status);
-		}else{
-			//TODO: hacer el background
-			
-			//TElemento comand;
-			//TODO
-			//crear((line->commands->argv)[0], pid, &comand);
-			//insertar(comand,&background);
+		wait(&status);
+		if(isbg){
+			TElemento salida;
+			eliminar(getpid(),&Background, &salida);
+			//asignar(&salida, eliminar(getpid(),&Background));
+			fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+			exit(0);
 		}
-		
 	}
 	
 }
@@ -247,10 +246,11 @@ void multipleCommands(tline * line, bool isbg){
 	}
 	for(int i=0; i<line->ncommands;i++){
 		wait(NULL);
-		if(isbg){
-			//TODO: cambiar proceso a terminado y/o Eliminarlo
-			
-		}
+	}
+	if(isbg){
+		//TElemento salida=eliminar(getpid(),&Background);
+		//fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+		exit(0);
 	}
 }
 
@@ -260,14 +260,28 @@ void addbg(tline * linea, char * name){
 		fprintf(stderr, "Error de ejecucion");
 	}
 	if(papa==0){
-		multipleCommands(linea, true);
+		printf("Entra hijo");
+		if(linea->ncommands > 1){
+			multipleCommands(linea, true);
+		}
+		else{
+			singleComand(linea,true);
+		}
 	}else{
+		printf("Entra padre");
 		TElemento proc;
-		proc.job_name=name;
+		printf("creadoelemento");
+		strcpy(proc.job_name, name);
 		proc.pid=papa;
 		proc.status=0;
+		printf("\n%d salida back \n", longitud(Background));
 		proc.job_id=longitud(Background)+1;
+			
+		printf("todo asignado");
 		insertar(proc, &Background);
+		printf("insertao");
+		printf("\n%d salida back \n", longitud(Background));
 	}
 }
+
 
