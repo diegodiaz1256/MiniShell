@@ -21,8 +21,10 @@ void cd(tcommand *command);
 void singleComand(tline * line,bool isbg);
 void multipleCommands(tline * line, bool isbg);
 void addbg(tline* linea, char *name);
+void handlebg();
 int main(void)
 {
+	signal(SIGUSR1, handlebg);
 	crearVacia(&Background);
 	signal(SIGQUIT,SIG_IGN);
 	signal(SIGINT,SIG_IGN);
@@ -138,7 +140,10 @@ void singleComand(tline * line, bool isbg){
 			TElemento salida;
 			eliminar(getpid(),&Background, &salida);
 			//asignar(&salida, eliminar(getpid(),&Background));
-			fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+			FILE *f;
+			f=fopen(".sec","wb+");
+			fprintf(f, "%d", getpid());
+			kill(getppid(), SIGUSR1);
 			exit(0);
 		}
 	}
@@ -257,12 +262,17 @@ void multipleCommands(tline * line, bool isbg){
 }
 
 void addbg(tline * linea, char * name){
+	TElemento proc;
+	strcpy(proc.job_name, name);
+	proc.status=0;
+	proc.job_id=longitud(Background)+1;
 	pid_t papa;
 	if((papa= fork())==-1){
 		fprintf(stderr, "Error de ejecucion");
 	}
 	if(papa==0){
-		printf("Entra hijo");
+		proc.pid=getpid();
+		insertar(proc, &Background);
 		if(linea->ncommands > 1){
 			multipleCommands(linea, true);
 		}
@@ -270,20 +280,20 @@ void addbg(tline * linea, char * name){
 			singleComand(linea,true);
 		}
 	}else{
-		printf("Entra padre");
-		TElemento proc;
-		printf("creadoelemento");
-		strcpy(proc.job_name, name);
 		proc.pid=papa;
-		proc.status=0;
-		printf("\n%d salida back \n", longitud(Background));
-		proc.job_id=longitud(Background)+1;
-			
-		printf("todo asignado");
 		insertar(proc, &Background);
-		printf("insertao");
+		TLinkedList p = Background;
 		printf("\n%d salida back \n", longitud(Background));
 	}
 }
-
+void handlebg(){
+	// sleep(5)
+	// FILE *f;
+	// int id;
+	// TElemento salida;
+	// f = fopen(".sec","rb");
+	// fscanf(f, "%d", &id);
+	// eliminar(id,&Background,&salida);
+	// fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+}
 

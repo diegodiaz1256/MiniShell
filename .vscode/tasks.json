@@ -10,6 +10,8 @@
                 "${file}",
                 "-no-pie",
                 "libparser_64.a",
+                "./SimpleLinkedList/simplelinkedlist.c",
+                "./SimpleLinkedList/TElemento.c",
                 "-o",
                 "${fileDirname}/executables/${fileBasenameNoExtension}"
             ],
