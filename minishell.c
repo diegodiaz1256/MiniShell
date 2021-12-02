@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include "simplelinkedlist.h"
+#include "TElemento.h"
 #include "parser.h"
 #define _GNU_SOURCE
 #define READ 0
