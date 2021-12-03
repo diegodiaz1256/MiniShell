@@ -12,7 +12,8 @@ struct Nodo{
 typedef struct Nodo Tnodo;
 
 typedef Tnodo* TLinkedList;
-
+void imprimir(TLinkedList l);
+void sacar(TLinkedList* l, TElemento* e, int num);
 void crearVacia (TLinkedList* a);
 void mostrar (TLinkedList a);
 void insertar (TElemento e, TLinkedList* a);

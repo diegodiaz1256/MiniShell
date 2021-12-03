@@ -2,7 +2,8 @@
     "files.associations": {
         "stdlib.h": "c",
         "string.h": "c",
-        "simplelinkedlist.h": "c"
+        "simplelinkedlist.h": "c",
+        "parser.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

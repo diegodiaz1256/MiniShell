@@ -7,8 +7,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include "simplelinkedlist.h"
-#include "TElemento.h"
+#include "SimpleLinkedList/simplelinkedlist.h"
+#include "SimpleLinkedList/TElemento.h"
 #include "parser.h"
 #define _GNU_SOURCE
 #define READ 0
@@ -17,13 +17,21 @@
 
 //TLinkedList background;
 static TLinkedList Background;
+static int tub[2];
 void cd(tcommand *command);
 void singleComand(tline * line,bool isbg);
 void multipleCommands(tline * line, bool isbg);
 void addbg(tline* linea, char *name);
 void handlebg();
+void fg();
+void salida();
+void jobs();
+void die();
+void killall();
+void fgConNumero(int num);
 int main(void)
 {
+	pipe(tub);
 	signal(SIGUSR1, handlebg);
 	crearVacia(&Background);
 	signal(SIGQUIT,SIG_IGN);
@@ -57,7 +65,7 @@ int main(void)
 		} */
 		printf("\n");
 		if (line->background){
-			printf("Entra background");
+			//printf("Entra background");
 			//printf("comando a ejecutarse en background\n");
 			addbg(line, buf);
 		}
@@ -93,10 +101,14 @@ void cd(tcommand *command){
 }
 
 void singleComand(tline * line, bool isbg){
+	
 	pid_t pid = fork();
+	
 	int status;
+	
 	if(pid==0){
-		
+		signal(SIGQUIT,SIG_DFL);
+		signal(SIGINT,SIG_DFL);
 		if(line->redirect_input!=NULL){
 			int file = open(line->redirect_input,O_RDONLY);
 			if(file==-1){
@@ -123,6 +135,10 @@ void singleComand(tline * line, bool isbg){
 			}else{
 				dup2(file, ERROR);
 			}
+		}
+		if(isbg){
+			int devNull = open("/dev/null", O_WRONLY);
+			//dup2(devNull, WRITE);
 		}	
 		if(line->commands->filename!=NULL){
 			execvp(line->commands->filename, line->commands->argv);
@@ -133,16 +149,25 @@ void singleComand(tline * line, bool isbg){
 		if(strcmp((line->commands->argv)[0],"cd")==0){
 			cd(line->commands);
 		}else if(strcmp((line->commands->argv)[0],"exit")==0){
+			killall();
 			exit(0);
+		}
+		else if(strcmp((line->commands->argv)[0],"jobs")==0){
+			jobs();
+		}
+		else if(strcmp((line->commands->argv)[0],"fg")==0){
+			if(line->commands->argc == 1){
+				fg();
+			}else{
+				fgConNumero(atoi(line->commands->argv[1]));
+			}
 		}
 		wait(&status);
 		if(isbg){
-			TElemento salida;
-			eliminar(getpid(),&Background, &salida);
-			//asignar(&salida, eliminar(getpid(),&Background));
-			FILE *f;
-			f=fopen(".sec","wb+");
-			fprintf(f, "%d", getpid());
+			signal(SIGQUIT,SIG_IGN);
+			signal(SIGINT,SIG_IGN);
+			int id = getpid();
+			write(tub[WRITE], &id, sizeof(int));
 			kill(getppid(), SIGUSR1);
 			exit(0);
 		}
@@ -153,8 +178,7 @@ void singleComand(tline * line, bool isbg){
 
 
 void multipleCommands(tline * line, bool isbg){
-	// signal(SIGQUIT,SIG_DFL);
-	// signal(SIGINT,SIG_DFL);
+	
 	
 	pid_t pid;
 	int tuberia[(line->ncommands)-1][2];
@@ -173,6 +197,8 @@ void multipleCommands(tline * line, bool isbg){
 	}
 	//primer comando
 	if(pid==0){
+		signal(SIGQUIT,SIG_DFL);
+		signal(SIGINT,SIG_DFL);
 		if(line->redirect_input!=NULL){
 			int file = open(line->redirect_input,O_RDONLY);
 			if(file==-1){
@@ -239,6 +265,10 @@ void multipleCommands(tline * line, bool isbg){
 				dup2(file, ERROR);
 			}
 		}
+		if(isbg){
+			int devNull = open("/dev/null", O_WRONLY);
+			//dup2(devNull, WRITE);
+		}
 		close(tuberia[line->ncommands-2][WRITE]);
 		for (int j=0; j<((line->ncommands)-2); j++) {
 			close(tuberia[j][WRITE]);
@@ -255,13 +285,15 @@ void multipleCommands(tline * line, bool isbg){
 		wait(NULL);
 	}
 	if(isbg){
-		//TElemento salida=eliminar(getpid(),&Background);
-		//fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+		int id = getpid();
+		write(tub[WRITE], &id, sizeof(int));
+		kill(getppid(), SIGUSR1);
 		exit(0);
 	}
 }
 
 void addbg(tline * linea, char * name){
+	
 	TElemento proc;
 	strcpy(proc.job_name, name);
 	proc.status=0;
@@ -271,8 +303,12 @@ void addbg(tline * linea, char * name){
 		fprintf(stderr, "Error de ejecucion");
 	}
 	if(papa==0){
-		proc.pid=getpid();
-		insertar(proc, &Background);
+		//pause();
+		//sleep(1);
+		signal(SIGQUIT,SIG_IGN);
+		signal(SIGINT,SIG_IGN);
+		signal(SIGUSR2, salida);
+		signal(SIGKILL, die);
 		if(linea->ncommands > 1){
 			multipleCommands(linea, true);
 		}
@@ -282,18 +318,45 @@ void addbg(tline * linea, char * name){
 	}else{
 		proc.pid=papa;
 		insertar(proc, &Background);
-		TLinkedList p = Background;
-		printf("\n%d salida back \n", longitud(Background));
+		//kill(papa, SIGUSR1);
 	}
 }
 void handlebg(){
-	// sleep(5)
-	// FILE *f;
-	// int id;
-	// TElemento salida;
-	// f = fopen(".sec","rb");
-	// fscanf(f, "%d", &id);
-	// eliminar(id,&Background,&salida);
-	// fprintf(stdout, "[%d]+ Ended\t\t %s", salida.job_id, salida.job_name);
+	int id;
+	TElemento salida;
+	read(tub[READ], &id, sizeof(int));
+	eliminar(id,&Background,&salida);
+}
+void salida(){
+	
+	signal(SIGQUIT,die);
+	signal(SIGINT,die);
+
+}
+void fg(){
+	TElemento elem;
+	sacar(&Background, &elem,-1);
+	kill(elem.pid, SIGUSR2);
+	waitpid(elem.pid, NULL, WUNTRACED);
+}
+void fgConNumero(int num){
+	TElemento elem;
+	sacar(&Background, &elem,num);
+	kill(elem.pid, SIGUSR2);
+	waitpid(elem.pid, NULL, WUNTRACED);
+}
+void jobs(){
+	imprimir(Background);
+}
+void die(){
+	exit(0);
+}
+void killall(){
+	TElemento sal, nah;
+	while(!esVacia(Background)){
+		ultimo(Background, &sal);
+		eliminar(sal.pid, &Background, &nah);
+		kill(sal.pid, SIGKILL);
+	}
 }
 

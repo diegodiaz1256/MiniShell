@@ -5,15 +5,24 @@
 
 
 
-
+void imprimir(TLinkedList l){
+    TLinkedList aux = l;
+    crearVacia(&aux);
+    aux=l;
+    while(aux!=NULL){
+        printf("[%d] + Running\t\t\t%s",aux->info.job_id,aux->info.job_name);
+        aux=aux->sig;
+    }
+    
+}
 void insertar  (TElemento e, TLinkedList* l){
   //  Tnodo* aux = (Tnodo*) malloc(1*sizeof(Tnodo));
-  printf("Entra en insertar");
+  //printf("Entra en insertar");
   TLinkedList aux = (TLinkedList) malloc(1*sizeof(Tnodo));
-  printf("Memoria asignada");
+  //printf("Memoria asignada");
         aux->sig=*l;
        asignar(&(aux->info),e);
-       printf("asignada");
+       //printf("asignada");
        *l=aux;
 }
 void crearVacia (TLinkedList* l){
@@ -41,19 +50,21 @@ void insertarFinal (TElemento e, TLinkedList* a){
 void eliminar (int id, TLinkedList* a , TElemento * salida){
         TLinkedList act = *a;
         TLinkedList ant= NULL;
-        TElemento encontrado;
-        encontrado.pid=-1;
-        while ((act!=NULL)&&(encontrado.pid==-1)){
-            if((act->info.job_id)==id){
+        salida->pid=-1;
+        while ((act!=NULL)&&(salida->pid==-1)){
+            if((act->info.pid)==id){
                 asignar(salida, (act)->info);
             }
-            if (encontrado.pid!=-1){
+            if (salida->pid!=-1){
                 if (ant==NULL){
                     (*a)=(*a)->sig;//por si es el primero
                 }
                 else{
-                    ant->sig=act->sig;}
+                    ant->sig=act->sig;
+                }
                 free(act);
+                //printf("Borrado");
+                //imprimir(*a);
                 }
             else{
                 ant=act;
@@ -68,6 +79,25 @@ void primero (TLinkedList a, TElemento* e){
         asignar(e,(a)->info);
     }
 
+}
+void sacar(TLinkedList* l, TElemento* e,int num){
+    TElemento nah;
+    if(num>=0){
+        int encontrado=0;
+        TLinkedList aux = *l;
+        while(aux!=NULL && !encontrado){
+            if(aux->info.job_id==num){
+                asignar(e,aux->info);
+                encontrado++;
+            }
+            else{
+                aux=aux->sig;
+            }
+        }
+    }else{
+        primero(*l, e);
+    }
+    eliminar(e->pid, l, &nah);
 }
 void resto (TLinkedList* a){
     if(!esVacia(*a)){
