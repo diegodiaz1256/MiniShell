@@ -34,8 +34,8 @@ int main(void)
 	pipe(tub);
 	signal(SIGUSR1, handlebg);
 	crearVacia(&Background);
-	signal(SIGQUIT,SIG_IGN);
-	signal(SIGINT,SIG_IGN);
+	signal(SIGINT, SIG_IGN); 
+    signal(SIGQUIT, SIG_IGN); 
 
 	//TODO
 	//crearVacia(&background);
