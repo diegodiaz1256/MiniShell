@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>
-#define PLAZAS 10
+#define PLAZAS 3
 #define COCHES 8
 #define CAMIONES 3
 
@@ -12,30 +12,9 @@ int parking[PLAZAS];
 pthread_mutex_t aparcando;
 int ocupados;
 pthread_cond_t full;
+void imprimirParking();
 
-void *aparcacoche(void *args){
-	printf("acabo de entrar al parkin");
-	//int matricula=*((int*) args);
-	// int libres;
-	// int pos;
-	
-
-	// while(1){
-	// 	sleep((rand()%10)+1);
-		// pthread_mutex_lock(&aparcando);
-		// printf("acabo de entrar al parkin %d", matricula);
-		// if(ocupados == PLAZAS){
-		// 	pthread_cond_wait(&full, &aparcando);
-		// }
-		// printf("soy el coche %d",matricula);
-		// sleep((rand()%11)+1);
-		
-		// //pthread_cond_signal(&full);
-		// pthread_mutex_unlock(&aparcando);
-
-		
-	//}
-}
+void *aparcacoche(void *args);
 
 int main (int argc, char* argv[]){
 	int matricula[COCHES];
@@ -49,14 +28,56 @@ int main (int argc, char* argv[]){
 	}
 	for(int i=0;i<COCHES;i++){
 		matricula[i]=i+1;
-	}
-	for(int i =0; i<COCHES;i++){
 		if(pthread_create(&coche[i], NULL, aparcacoche, (void*) &matricula[i])){
 			perror("Hilo no creao");
-		}else{
-			printf("coche %d\n", matricula[i]);
 		}
 	}
+	//pthread_cond_signal(&full);
+
 	while(1);
 }
 
+void imprimirParking(){
+	printf("Parking: ");
+		for (int i=0; i<PLAZAS; i++) {
+			printf("[%d] ", parking[i]); //estado actual del parking
+		}
+	printf("\n");
+}
+
+void *aparcacoche(void *args){
+	int matricula=*((int*) args);
+	int libres;
+	int pos;
+	
+    sleep((rand()%11)+1);
+	while(1){
+		//sleep((rand()%11)+1);
+		pthread_mutex_lock(&aparcando);
+		//printf("esperando al parkin %d\n", matricula);
+		if(ocupados == PLAZAS){
+			pthread_cond_wait(&full, &aparcando);
+		}
+		
+		pos = 0;
+		while(parking[pos]!=-1){
+			pos++;
+		}
+		parking[pos]=matricula;
+		ocupados++;
+		printf("ENTRA -> el coche %d libres:%d\n",matricula, PLAZAS-ocupados);
+		imprimirParking();
+		pthread_mutex_unlock(&aparcando);
+		sleep((rand()%11)+1);
+		pthread_mutex_lock(&aparcando);
+		ocupados--;
+		parking[pos] = -1;
+		printf("SALE <- coche %d libres: %d\n",matricula, PLAZAS-ocupados);
+		imprimirParking();
+		pthread_cond_signal(&full);
+		pthread_mutex_unlock(&aparcando);
+		sleep((rand()%11)+1);
+
+		
+	}
+}
