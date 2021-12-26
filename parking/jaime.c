@@ -6,7 +6,7 @@
 #include <errno.h>
 #define COCHES 8
 #define CAMIONES 3
-#define PLAZAS 10
+#define PLAZAS 5
 
 
 int parking[PLAZAS];
@@ -25,7 +25,7 @@ void *fcamion(void *args){
 		while ((ocupacion==PLAZAS) || (ocupacion==PLAZAS-1)) {
 			pthread_cond_wait(&nolleno, &park); //en caso de que estuviera lleno o no cupiese nuestro camion, esperamos
 		}
-		while (parking[i]!=0)  [1][0][0][1]
+		while (parking[i]!=0)
 			i++; //recorremos las posiciones del parking hasta encontrar una libre
 		if ((i<PLAZAS-1) && (parking[i+1]==0)){ //si hubiera dos plazas libres, y además fueran consecutivas
 			parking[i]=numero; //ponemos la posicion actual y la siguiente como "ocupada" por nuestro camion
@@ -69,7 +69,7 @@ void *fcoche(void *args){
 		i=0;
 		sleep((rand()%10)+2);
 		pthread_mutex_lock(&park); //un coche entra en el parking
-		while (ocupacion==PLAZAS) {
+		if (ocupacion==PLAZAS) {
 			pthread_cond_wait(&nolleno, &park);//en caso de que estuviera lleno o no cupiese nuestro coche esperamos
 		}
 		while (parking[i]!=0)
@@ -106,26 +106,26 @@ void *fcoche(void *args){
 int main (int argc, char* argv[]){ //inicio de main
 	int i;
 	int ncoches[COCHES]; //array con el numero maximo de coches predefinido
-	int ncamiones[CAMIONES]; //array con el numero maximo de camiones predefinido
+	//int ncamiones[CAMIONES]; //array con el numero maximo de camiones predefinido
 	ocupacion=0;
 	pthread_t coches[COCHES]; //array de threads, cada thread corresponde a un coche
 	pthread_mutex_init(&park, NULL); //mutex que limitará la entrada de vehiculos al parking de uno en uno
 	pthread_cond_init(&nolleno, NULL); //condicion que bloqueará la accion si el parking estuviera lleno
-	pthread_t camiones[CAMIONES]; //array de threads, cada thread corresponde a un camion
+	//pthread_t camiones[CAMIONES]; //array de threads, cada thread corresponde a un camion
 	for (i=0; i<PLAZAS; i++) {
 		parking[i]=0; //se inicializan las plazas de aparcamiento a 0 (vacias)
 	}
 	for (i=0; i<COCHES; i++){
 		ncoches[i]=i+1; //se da nombre a los coches (0,1...n)
 	}
-	for (i=0; i<CAMIONES; i++) {
-		ncamiones[i]=101+i; //se da nombre a los camiones (101, 102... n)
-	}
+	// for (i=0; i<CAMIONES; i++) {
+	// 	ncamiones[i]=101+i; //se da nombre a los camiones (101, 102... n)
+	// }
 	for (i=0; i<COCHES; i++) {
 		pthread_create(&coches[i], NULL, fcoche, (void*) &ncoches[i]); //se crean los threads de los coches
 	}
-	for (i=0; i<CAMIONES; i++) {
-		pthread_create(&camiones[i], NULL, fcamion, (void*) &ncamiones[i]); //se crean los threads de los camiones
-	}
+	// for (i=0; i<CAMIONES; i++) {
+	// 	pthread_create(&camiones[i], NULL, fcamion, (void*) &ncamiones[i]); //se crean los threads de los camiones
+	// }
 	while (1);
 } // fin del main
