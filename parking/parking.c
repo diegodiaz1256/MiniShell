@@ -88,6 +88,7 @@ void *aparcacoche(void *args){
 		}
 		parking[planta][pos]=matricula;
 		ocupados++;
+		// 🚓 🏍️ 🏎️ 🦼 
 		printf("ENTRA -> 🚗 Coche 🚗 %d aparca en: plaza %d de planta %d. Plazas libres: %d\n",matricula,pos,planta, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_mutex_unlock(&aparcando);
@@ -150,6 +151,7 @@ void *aparcacamion(void *args){
 		parking[planta][pos+1]=matricula;
 		ocupados++;
 		ocupados++;
+		//🚌 🚋 🚑 🚒 
 		printf("ENTRA -> 🚚 Camion 🚚 %d aparca en: %d y %d de la planta %d. Plazas libres: %d\n",matricula, pos, pos+1, planta, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_mutex_unlock(&aparcando);
