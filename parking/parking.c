@@ -5,12 +5,12 @@
 #include <signal.h>
 #include <errno.h>
 #include <semaphore.h>
-#define PLAZAS 5
-#define COCHES 10
-#define CAMIONES 3
-#define PLANTAS 3
+int PLAZAS;
+int COCHES;
+int CAMIONES;
+int PLANTAS;
 
-int parking[PLANTAS][PLAZAS];
+int ** parking;
 pthread_mutex_t aparcando;
 int ocupados;
 pthread_cond_t full, entradacamion;
@@ -20,6 +20,39 @@ void *aparcacoche(void *args);
 void *aparcacamion(void *args);
 
 int main (int argc, char* argv[]){
+
+	if(argc==1){
+		PLAZAS = 4;
+		COCHES = 8;
+		CAMIONES = 2;
+		PLANTAS = 1;	
+	}else if(argc==3){
+		PLAZAS= atoi(argv[1]);
+		PLANTAS = atoi(argv[2]);
+		COCHES = 2*PLANTAS*PLAZAS;
+		CAMIONES = 0;
+	}else if(argc==4){
+		PLAZAS= atoi(argv[1]);
+		COCHES = atoi(argv[3]);
+		PLANTAS = atoi(argv[2]);
+		CAMIONES = 0;	
+	}else if(argc==5){
+		PLAZAS= atoi(argv[1]);
+		COCHES = atoi(argv[3]);
+		PLANTAS = atoi(argv[2]);
+		CAMIONES = atoi(argv[4]);	
+	}else{
+		printf("Entrada no valida");
+	}
+
+	parking = (int**)malloc(sizeof(int*)*(PLANTAS));
+	for(int i =0; i<PLANTAS;i++){
+		parking[i]=(int*) malloc(sizeof(int)*PLAZAS);
+	}	
+
+	printf("+++++++++++++++\nPLAZAS=%d\nPLANTAS=%d\nCOCHES=%d\nCAMIONES=%d\n+++++++++++++++\n", PLAZAS, PLANTAS, COCHES, CAMIONES);
+	sleep(2);
+
 	int matricoche[COCHES];
 	int matricamion[CAMIONES];
 	//int arraycamiones[CAMIONES];
@@ -36,7 +69,6 @@ int main (int argc, char* argv[]){
 	}
 	for(int i=0;i<COCHES;i++){
 		matricoche[i]=i+1;
-		printf("coche %d creado", matricoche[i]);
 		if(pthread_create(&coche[i], NULL, aparcacoche, (void*) &matricoche[i])){
 			perror("Hilo no creao");
 		}
@@ -88,15 +120,17 @@ void *aparcacoche(void *args){
 		}
 		parking[planta][pos]=matricula;
 		ocupados++;
-		// 🚓 🏍️ 🏎️ 🦼 
-		printf("ENTRA -> 🚗 Coche 🚗 %d aparca en: plaza %d de planta %d. Plazas libres: %d\n",matricula,pos,planta, (PLAZAS*PLANTAS)-ocupados);
+		// 🚓🏍️🏎️🦼🚗🚕🚙🏎️🚓🚜🦽🦼
+		char coches[10][10] =  {"🚓","🏍️","🦼","🚗","🚕","🚙","🏎️","🚓","🚜","🦽"};
+		char * coche = coches[rand()%10];
+		printf("ENTRA -> %s  Coche %s  %d aparca en: plaza %d de planta %d. Plazas libres: %d\n",coche,coche,matricula,pos,planta, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_mutex_unlock(&aparcando);
 		sleep((rand()%11)+1);
 		pthread_mutex_lock(&aparcando);
 		ocupados--;
 		parking[planta][pos] = 0;
-		printf("SALE <- 🚗 Coche 🚗 %d saliendo. Plazas libres: %d\n",matricula, (PLAZAS*PLANTAS)-ocupados);
+		printf("SALE <- %s  Coche %s  %d saliendo. Plazas libres: %d\n",coche, coche, matricula, (PLAZAS*PLANTAS)-ocupados);
 		for(int i=0; i<PLANTAS;i++){
 			pos=0;
 			while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){
@@ -129,15 +163,9 @@ void *aparcacamion(void *args){
 		pthread_mutex_lock(&aparcando);
 		encontrado=0;
 		do{
-			pthread_cond_wait(&entradacamion, &aparcando);
 			for(int i=0; i<PLANTAS; i++){
 				pos = 0;
-				while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){  //
-					//[0] [4] [5] [10] [0] plazas
-					//	[0] [0] [0] [0] [0] 
-					//	[0] [0] [0] [0] [0]
-
-
+				while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){ 
 					pos++;														
 				}
 				if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos+1<PLAZAS-1){
@@ -146,13 +174,18 @@ void *aparcacamion(void *args){
 					break;
 				}
 			}
+			if(encontrado==0){
+				pthread_cond_wait(&entradacamion, &aparcando);
+			}
 		}while(ocupados >= (PLAZAS*PLANTAS)-1&&encontrado==0);
 		parking[planta][pos]=matricula;
 		parking[planta][pos+1]=matricula;
 		ocupados++;
 		ocupados++;
-		//🚌 🚋 🚑 🚒 
-		printf("ENTRA -> 🚚 Camion 🚚 %d aparca en: %d y %d de la planta %d. Plazas libres: %d\n",matricula, pos, pos+1, planta, (PLAZAS*PLANTAS)-ocupados);
+		//🚚🚛🚌🚎🚟🚋🚝🚅✈️🛺
+		char camiones[10][10] = {"🚚","🚛","🚌","🚎","🚟","🚋","🚝","🚅","✈️","🛺"};
+		char * camion = camiones[rand()%10];
+		printf("ENTRA -> %s  Camion %s  %d aparca en: %d y %d de la planta %d. Plazas libres: %d\n",camion,camion,matricula, pos, pos+1, planta, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_mutex_unlock(&aparcando);
 		sleep((rand()%11)+1);
@@ -161,7 +194,7 @@ void *aparcacamion(void *args){
 		ocupados--;
 		parking[planta][pos] = 0;
 		parking[planta][pos+1]=0;
-		printf("SALE <- 🚚 Camion 🚚 %d saliendo. PLazas libres: %d\n",matricula, (PLAZAS*PLANTAS)-ocupados);
+		printf("SALE <- %s  Camion %s  %d saliendo. PLazas libres: %d\n",camion,camion,matricula, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_cond_signal(&entradacamion);
 		pthread_cond_signal(&full);
