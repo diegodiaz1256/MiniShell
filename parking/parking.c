@@ -55,7 +55,6 @@ int main (int argc, char* argv[]){
 
 	int matricoche[COCHES];
 	int matricamion[CAMIONES];
-	//int arraycamiones[CAMIONES];
 	ocupados=0;
 	pthread_t coche[COCHES];
 	pthread_t camion[CAMIONES];
@@ -70,17 +69,15 @@ int main (int argc, char* argv[]){
 	for(int i=0;i<COCHES;i++){
 		matricoche[i]=i+1;
 		if(pthread_create(&coche[i], NULL, aparcacoche, (void*) &matricoche[i])){
-			perror("Hilo no creao");
+			perror("Error: Hilo no creado");
 		}
 	}
 	for(int i=0;i<CAMIONES;i++){
 		matricamion[i]=i+1+100;
 		if(pthread_create(&camion[i], NULL, aparcacamion, (void*) &matricamion[i])){
-			perror("Hilo no creao");
+			perror("Error: Hilo no creado");
 		}
 	}
-	//pthread_cond_signal(&full);
-
 	while(1);
 }
 
@@ -102,9 +99,7 @@ void *aparcacoche(void *args){
 	int planta;
     sleep((rand()%11)+1);
 	while(1){
-		//sleep((rand()%11)+1);
 		pthread_mutex_lock(&aparcando);
-		//printf("esperando al parkin %d\n", matricula);
 		while(ocupados == PLAZAS*PLANTAS){
 			pthread_cond_wait(&full, &aparcando);
 		}
@@ -158,8 +153,6 @@ void *aparcacamion(void *args){
 	int encontrado;
     sleep((rand()%11)+1);
 	while(1){
-		//sleep((rand()%11)+1);
-		
 		pthread_mutex_lock(&aparcando);
 		encontrado=0;
 		do{
@@ -199,7 +192,6 @@ void *aparcacamion(void *args){
 		pthread_cond_signal(&entradacamion);
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&aparcando);
-		
 		sleep((rand()%11)+1);
 	}
 }
