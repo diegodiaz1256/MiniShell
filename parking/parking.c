@@ -5,9 +5,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <semaphore.h>
-#define PLAZAS 5
-#define COCHES 10
-#define CAMIONES 3
+#define PLAZAS 4
+#define COCHES 0
+#define CAMIONES 10
 #define PLANTAS 3
 
 int parking[PLANTAS][PLAZAS];
@@ -102,7 +102,7 @@ void *aparcacoche(void *args){
 			while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){
 				pos++;
 			}
-			if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos+1<=PLAZAS-1){
+			if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos<PLAZAS-1){
 				pthread_cond_signal(&entradacamion);
 				break;
 			}
@@ -129,24 +129,26 @@ void *aparcacamion(void *args){
 		pthread_mutex_lock(&aparcando);
 		encontrado=0;
 		do{
-			pthread_cond_wait(&entradacamion, &aparcando);
 			for(int i=0; i<PLANTAS; i++){
 				pos = 0;
 				while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){  //
-					//[0] [4] [5] [10] [0] plazas
-					//	[0] [0] [0] [0] [0] 
+					//[0] [4] [5] [0] [3] plazas
+					//	[100] [100] [0] [0] [0] 
 					//	[0] [0] [0] [0] [0]
 
 
 					pos++;														
 				}
-				if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos+1<PLAZAS-1){
+				if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos<PLAZAS-1){
 					encontrado++;
 					planta = i;
 					break;
 				}
 			}
-		}while(ocupados >= (PLAZAS*PLANTAS)-1&&encontrado==0);
+			if(encontrado==0){
+				pthread_cond_wait(&entradacamion, &aparcando);
+			}
+		}while(ocupados >= (PLAZAS*PLANTAS)-1||encontrado==0);
 		parking[planta][pos]=matricula;
 		parking[planta][pos+1]=matricula;
 		ocupados++;
