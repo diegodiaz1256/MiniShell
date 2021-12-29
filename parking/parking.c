@@ -136,7 +136,7 @@ void *aparcacoche(void *args){
 			while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){
 				pos++;
 			}
-			if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos+1<=PLAZAS-1){
+			if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos<PLAZAS-1){
 				pthread_cond_signal(&entradacamion);
 				break;
 			}
@@ -168,7 +168,7 @@ void *aparcacamion(void *args){
 				while((parking[i][pos]!=0 || parking[i][pos+1]!=0) && pos<PLAZAS-1){ 
 					pos++;														
 				}
-				if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos+1<PLAZAS-1){
+				if(parking[i][pos+1]==0 && parking[i][pos] == 0 &&pos<PLAZAS-1){
 					encontrado++;
 					planta = i;
 					break;
@@ -177,7 +177,7 @@ void *aparcacamion(void *args){
 			if(encontrado==0){
 				pthread_cond_wait(&entradacamion, &aparcando);
 			}
-		}while(ocupados >= (PLAZAS*PLANTAS)-1&&encontrado==0);
+		}while(ocupados >= (PLAZAS*PLANTAS)-1||encontrado==0);
 		parking[planta][pos]=matricula;
 		parking[planta][pos+1]=matricula;
 		ocupados++;
