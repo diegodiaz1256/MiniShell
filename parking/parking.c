@@ -109,7 +109,7 @@ void *aparcacoche(void *args){
 		while(parking[planta][pos]!=0){
 			pos++;
 			if(pos==PLAZAS && planta < PLANTAS-1){
-				pos=0;
+				pos=0; 
 				planta++;
 			}
 		}
@@ -187,7 +187,7 @@ void *aparcacamion(void *args){
 		ocupados--;
 		parking[planta][pos] = 0;
 		parking[planta][pos+1]=0;
-		printf("SALE <- %s  Camion %s  %d saliendo. PLazas libres: %d\n",camion,camion,matricula, (PLAZAS*PLANTAS)-ocupados);
+		printf("SALE <- %s  Camion %s  %d saliendo. Plazas libres: %d\n",camion,camion,matricula, (PLAZAS*PLANTAS)-ocupados);
 		imprimirParking();
 		pthread_cond_signal(&entradacamion);
 		pthread_cond_signal(&full);
